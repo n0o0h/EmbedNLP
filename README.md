@@ -29,13 +29,13 @@ Represent every word as `|V|*1` vector, with one denotes the word index, and oth
 * Filter low frequency words
 
 #### n-gram
-```
+```python
 def n_grams(text, n):
     return [text[i:i+n] for i in range(len(text)-n+1)]
 a = ['I', 'love', 'you']
 print(n_grams(a, 2))
-
 ```
+
 ### 1.2. TF-IDF
 
 `TF` = word count /  total word counts **in one document**. E.g., TF(water, Document 1) = 2/9.
@@ -72,7 +72,8 @@ The results of window size **2** and **both** direction:
 #### Pros and cons
 - high dimension
 - applying SVD
-```
+
+```python
 # input texts
 # 1. I enjoy flying.
 # 2. I like NLP.
@@ -102,46 +103,39 @@ for i in range(len(words)):
     plt.text(U[i, 0], U[i, 1], words[i])
 ```
 
-![applying SVD](https://github.com/gaoisbest/NLP-Projects/blob/master/0_Word2vec/svd.png)
-
 ## 3. Word2vec
 ### Principle
-- Two model [2]
+- Two models:
     - CBOW
-![](https://github.com/gaoisbest/NLP-Projects/blob/master/0_Word2vec/Word2vec_CBOW.png)
     - Skip-gram
-![](https://github.com/gaoisbest/NLP-Projects/blob/master/0_Word2vec/Word2vec_Skip_gram.png)
     - Both are **two layer MLP**
 - Two algorithms: Hierarchical softmax, Negative sampling.
 - Distributional hypothesis: **Similar words have similar context**.
 
 ### Comparisons of CBOW and Skip-gram
 - speed
-    - cbow: **faster**, skip-gram: **slower**, 
+    - cbow: **faster**, skip-gram: **slower**
 - infrequent words
-    - cbow: **bad**, skip-gram: **better**, [why](https://stats.stackexchange.com/questions/180548/why-is-skip-gram-better-for-infrequent-words-than-cbow)?
+    - cbow: **bad**, skip-gram: **better**
 - training data
-    - cbow: **smaller datasets**, skip-gram: **larger datasets**. 
+    - cbow: **smaller datasets**, skip-gram: **larger datasets**
     - CBOW smoothes over a lot of the distributional information (by treating an entire context as one observation), useful for **smaller datasets**. Skip-gram treats each context-target pair as a new observation, and tends to do better when **larger datasets**.
 
 ### Negative Sampling
-- Negative samples are selected proportional to its frequency (`f(w)^3/4`, this power makes **less frequent words be sampled more often**). Frequent words (such as the, and) are [subsampling](http://mccormickml.com/2017/01/11/word2vec-tutorial-part-2-negative-sampling/) .
-- For each word in one sentence, it can be deleted or not according its frequency. And the hyper-parameter sampling rate (i.e., `sample` in [gensim](https://radimrehurek.com/gensim/models/word2vec.html) `Word2Vec`, default value is `1e-3`)
-- How to do sampling [in detail](https://www.jianshu.com/p/9b64d98b0fcb) ? 
+- Negative samples are selected proportional to its frequency (`f(w)^3/4`, this power makes **less frequent words be sampled more often**). Frequent words (such as the, and) are subsampled.
+- For each word in one sentence, it can be deleted or not according its frequency, controlled by the hyper-parameter sampling rate (default value is `1e-3`).
 
-### [Comparisons of HS and NS](https://code.google.com/archive/p/word2vec/):
-* hierarchical softmax (better for infrequent words) vs negative sampling (better for frequent words, better with low dimensional vectors), [why](https://stats.stackexchange.com/questions/180076/why-is-hierarchical-softmax-better-for-infrequent-words-while-negative-sampling)?
-* sub-sampling of frequent words: can improve both accuracy and speed for large data sets (useful values are in range 1e-3 to 1e-5), [why](https://www.quora.com/How-does-sub-sampling-of-frequent-words-work-in-the-context-of-Word2Vec)?
+### Comparisons of Hierarchical Softmax (HS) and Negative Sampling (NS):
+* hierarchical softmax (better for infrequent words) vs negative sampling (better for frequent words, better with low dimensional vectors)
+* sub-sampling of frequent words: can improve both accuracy and speed for large data sets (useful values are in range 1e-3 to 1e-5)
 * dimensionality of the word vectors: usually more is better, but not always
 * context (window) size: for skip-gram usually around 10, for CBOW around 5
 
-
 ### Implementation
 #### fastText
-For building word vectors, [fasttext](https://fasttext.cc/docs/en/unsupervised-tutorial.html) is extremely fast. The `input` format is a text corpus file which contains several lines. Each line includes **segmented word by whitespace**.
-#### gensim
-I did a very simple performance comparsion of [gensim](https://radimrehurek.com/gensim/models/word2vec.html) and [fastText](https://github.com/facebookresearch/fastText) based on the same hyper-parameters, the results of gensim seems little better than that of fastText (without n-gram).
+For building word vectors, fasttext is extremely fast. The `input` format is a text corpus file which contains several lines. Each line includes **segmented word by whitespace**.
 
+#### gensim
 `gensim_Word2vec_cbow_hs_model_test.py`: gensim based on cbow model and hierarchical softmax trick.
 
 `gensim_Word2vec_sg_ns_model_test.py`: gensim based on skipgram model and negative sampling trick.
@@ -150,51 +144,42 @@ I did a very simple performance comparsion of [gensim](https://radimrehurek.com/
 
 `fastText_Word2vec_sg_ns_model_test.bash`: fastText based on skipgram and negative sampling trick.
 
-The input of the about sripts is [word_vector_108000.cs](https://pan.baidu.com/s/1i5Jy4lv), which contains 108,000 documents (15,000 training data and 3,000 testing data for each category, and 6 category in total).
-
-#### tensorflow
-I also implemented the [Word2vec in tensorflow](https://github.com/gaoisbest/NLP-Projects/blob/master/0_Word2vec/tf_2_word2vec.ipynb) based on CS20SI. The following image show the results, it looks good enough.
-
-![ ](https://github.com/gaoisbest/NLP-Projects/blob/master/0_Word2vec/tf_word2vec.png)
-
 ### Discussion
 - **The word orders are ignored in each window.**
 - Generally, **narrower window size** leads to better performance in **syntactic** tests while **wider window size** leads to better performance in **semantic** tests.
 - Key drawbacks: **cannot handle Polysemy**, different meanings of the word has same embeddings.
 
-Reference:  
+References:  
 - [1] http://web.stanford.edu/class/cs224n/lecture_notes/cs224n-2017-notes1.pdf
-- [2] https://mp.weixin.qq.com/s/Rd3-ypRYiJObi-e2JDeOjQ
 
 
 ## 4. GloVe
 ### Principle
-Global vectors for word representation (GloVe) uses global statistics to predict the probability of word `j` appearing in the context of word `i` with a **least square** objective.  
-### Formula
-![](https://github.com/gaoisbest/NLP-Projects/blob/master/0_Word2vec/GolVe.png)  
-where `X` is word-word co-occurrence matrix.  
+Global vectors for word representation (GloVe) uses global statistics to predict the probability of word `j` appearing in the context of word `i` with a **least square** objective.
+
+Where `X` is word-word co-occurrence matrix.  
 The |GloVe vectors| can be viewed as **Keywords**, since the larger the co-occur the larger |GloVe vector| is.
+
 ### Difference with skip-gram
-The skip-gram tries to capture the words co-occurence **one window at a time**. GloVe tries to catpure all words co-occurence informations across the whole corpus.  
+The skip-gram tries to capture the words co-occurence **one window at a time**. GloVe tries to capture all words co-occurence informations across the whole corpus.  
 
 Reference:  
 http://web.stanford.edu/class/cs224n/lecture_notes/cs224n-2017-notes2.pdf
 
 
 ## 5. Conclusion
-### Why called embeddings ?
+### Why called embeddings?
 Let the word embedding dimension is 100, each word **gets embedded to a point** in 100 dimensional space.
 
 ### Transfer learning of word embeddings
 - Learn word embeddings from a large corpus
 - Transfer word embeddings to new task.
-- Whether or not fine-tune the embeddings depends on the corpus size of new task. For [NER](https://github.com/gaoisbest/NLP-Projects/blob/master/Sequence%20labeling%20-%20NER/README.md), pretrained word embeddings are prerequisites for better accuracy.  
+- Whether or not fine-tune the embeddings depends on the corpus size of new task. For NER, pretrained word embeddings are prerequisites for better accuracy.
 
 ### Point-wise mutual information (PMI)
 - `pmi(x,y) = log(p(x,y) / (p(x) * p(y)))`
 - If the `pmi(x,y)` of two words is larger than 0, it indicates that they are dependent.
+
 ## 6. Pre-trained word embedding
-- [Tencent 200d Chinese embedding](https://ai.tencent.com/ailab/nlp/embedding.html)
-- [Fasttext Chinese embedding](https://fasttext.cc/docs/en/crawl-vectors.html)
-
-
+- Tencent 200d embedding
+- Fasttext embedding
